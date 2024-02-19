@@ -1,0 +1,60 @@
+---
+title: "Assignment 2"
+author: "Meet Muchhala"
+format: html
+editor: visual
+---use
+---
+
+TASK 1: Spatial data visualization (interactive map & choropleth)
+For this task, read in the spatial data, and create a professionally formatted and prepared HTML from a Quarto doc in which you: 
+## Reading the data and initialization
+
+```{r setup}
+
+
+library(tidyverse)
+library(here)
+library(broom)
+library(sf)
+library(tmap)
+library(usmap)
+library(mapdata)
+```
+
+## Visualizing the oil spill events in California (2008)
+
+```{r}
+us_states <- map_data("state")
+ca_state <- subset(state, region=="california")
+counties <- map_data("county")
+ca_county <- subset(counties, region=="california")
+
+ca_map <- ggplot(data=ca_state, mapping=aes(x=long, y=lat, group=group)) + 
+  coord_fixed(1.3) + 
+  geom_polygon(color="black", fill="white") + 
+  geom_polygon(data=ca_county, fill=NA, color="black")  + 
+  ggtitle('Washington Map with Counties') + 
+  theme_void()
+ca_map
+
+
+```
+
+
+```{r}
+ca_counties_raw <- read_sf(here('data', 'oil_spill_ca.shp'))
+
+mapp2 <- ggplot(data=ca_counties_raw, mapping=aes(x=LONGITUDE, y=LATITUDE, group = geometry)) + 
+  coord_fixed(1.3) + 
+  geom_polygon(color="black", fill="white")
+
+mapp2
+
+```
+
+Make an exploratory interactive map in tmap showing the location of oil spill events included in the data.
+NOTE: an interactive map using tmap_mode(‘view’) might be very processor intensive and/or create very large files… so if your computer is older and not up to the task, it is OK to create a static map using tmap_mode(‘plot’).
+Make a finalized static choropleth map in ggplot in which the fill color for each county depends on the count of inland oil spill events by county for the 2008 oil spill data
+
+
