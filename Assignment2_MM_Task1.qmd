@@ -1,0 +1,147 @@
+---
+title: "Assignment 2 - Task 1"
+author: "Meet Muchhala"
+format: 
+  html:
+    code-fold: true
+    embed-resources: true
+    toc: true
+editor: visual
+execute: 
+  echo: true
+  warning: false
+  message: false
+---
+
+# The Oil Spill Disasters of California
+
+## Introduction
+
+Oil spills pose significant environmental and ecological threats, impacting marine and terrestrial ecosystems, as well as human health and livelihoods. Understanding the spatial distribution and patterns of oil spill incidents is crucial for effective environmental management and response efforts. In this analysis, we explore oil spill incidents in California (CA) during the year 2008 using spatial data visualization techniques. The dataset, sourced from the California Department of Fish and Wildlife (DFW) Oil Spill Incident Tracking, provides detailed information on the location and attributes of oil spill events within the state categorized by counties.
+
+## Dataset Summary
+
+The dataset used in this analysis comprises oil spill incident data from the California Department of Fish and Wildlife (DFW) Oil Spill Incident Tracking for the year 2008. Additionally, shapefile data containing the borders of California counties was obtained from CA Open Data Portal to facilitate spatial visualization and analysis. The oil spill dataset provides information on the location and attributes of oil spill events that occurred within California during 2008.
+
+## Data Citation:
+
+-   Data for 2008 Oil Spill Incidents in CA: “Oil Spill Incident Tracking \[DS394\].” California State Geoportal, gis.data.ca.gov/datasets/7464e3d6f4924b50ad06e5a553d71086_0/explore?location=36.773062%2C-119.422009%2C6.74. Accessed 17 Feb. 2024.
+
+-   Data for California boundaries: “CA Geographic Boundaries - Dataset - California Open Data.” California Open Data Portal, data.ca.gov/dataset/ca-geographic-boundaries/resource/b0007416-a325-4777-9295-368ea6b710e6?inner_span=True. Accessed 17 Feb. 2024.
+
+## Purpose of Analysis
+
+The primary objective of this analysis is to visualize and explore the spatial distribution of oil spill events in California in 2008. This involves creating both exploratory interactive maps and finalized static choropleth maps to provide insights into the geographical patterns and concentrations of oil spill incidents across the state.
+
+## Methods
+
+### Data Preparation and Loading
+
+- Set up the required libraries for initialization
+- Readthe oil spill incident data from the CSV file.
+- Downloaded and imported shapefile data for California county borders.
+- Read the shapefile for setting up California map with counties.
+
+### Exploratory Interactive Map
+
+- Converted the oil spill data into simple feature objects using the x and y coordinates and also checked the coordinate reference systems for alignment.
+- Chose tmap("view") for developing interactive map using tmap functions ahead
+- Represent the inland and marine oil spills in different color palette to distinguish.
+
+### Aggregate oil spill counts by county
+
+- Set spatial join with aggregated counts of county shapefile data.
+- Used ggplot to create a choropleth map, with county fill color based on the count of oil spill events.
+
+## Analysis
+
+### Reading the data and initialization
+
+```{r setup}
+
+
+library(tidyverse)
+library(here)
+library(broom)
+library(sf)
+library(tmap)
+library(spatstat)
+```
+
+### Loading the datasets 
+
+```{r}
+
+## Setting up the oil spill 2008 events in CA dataset
+
+ca_oilspill_df <- read_csv(here('data', 'oil_spill_ca.csv')) %>% 
+  janitor::clean_names()
+
+## Converting Oil Spill coordinates into simple features for ease of use and analysis
+
+ca_oilspill_sf <- ca_oilspill_df %>% 
+  drop_na(x, y) %>% 
+  st_as_sf(coords = c("x", "y"), crs = 3857) 
+  
+## Setting up the CA Map with counties boundaries 
+
+ca_map_sf <- read_sf(here('data', 'ca_counties', 'CA_Counties_TIGER2016.shp')) %>% 
+  janitor::clean_names() %>% 
+  select(name)
+
+```
+
+
+### Verifying Coordinate Reference Systems (CRS)
+
+```{r message=FALSE, warning=FALSE}
+
+st_crs(ca_oilspill_sf) ## <- the CRS system set here is WGS 84/Pseudo-Mercator
+st_crs(ca_map_sf) ## <- the CRS system here is WGS 84/Pseudo-Mercator 
+
+st_crs(ca_oilspill_sf) == st_crs(ca_map_sf)
+## Hence, no need to transform the features of both the data since they align. 
+
+
+```
+
+### Interactive map: Oil spill events in California (2008)
+
+```{r echo=TRUE}
+#| eval: false 
+#| echo: true
+
+tmap_mode(mode = "view") 
+
+colors <-  c("Inland" = "brown", "Marine" = "darkblue")
+
+
+
+tm_shape(ca_map_sf) +
+  tm_borders() + tm_style('classic') +
+  tm_shape(ca_oilspill_sf) +
+  tm_dots(col = "inlandmari", shape = 16, palette = colors, title = "Oil Spills Locations") +
+   tm_layout(title = "California Oil Spill Incidents 2008")
+
+```
+
+### Chloreopath Map: Oil Spill Incidents by County 
+
+```{r}
+oilspill_counties_sf <- st_join(ca_map_sf, ca_oilspill_sf)
+
+oilspill_counts_sf <- oilspill_counties_sf %>%
+  group_by(name) %>% 
+  summarize(oilspill_count = n())
+
+ggplot() +
+  geom_sf(data = oilspill_counts_sf, aes(fill = oilspill_count)) +
+  scale_fill_gradientn(colors = c("white", "yellow","orange2", "tomato", "red4"), name = "Number of Oil Spills") +
+  theme_void() +
+  labs(title = "California Oil Spill 2008", caption = "fafsfs") + 
+    theme(legend.position = "right",  # Move legend to bottom
+        plot.title = element_text(size = 15, hjust = 0.5))
+  
+  
+
+```
