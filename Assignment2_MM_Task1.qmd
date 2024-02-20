@@ -94,7 +94,8 @@ ca_map_sf <- read_sf(here('data', 'ca_counties', 'CA_Counties_TIGER2016.shp')) %
 
 ### Verifying Coordinate Reference Systems (CRS)
 
-```{r message=FALSE, warning=FALSE}
+```{r}
+
 
 st_crs(ca_oilspill_sf) ## <- the CRS system set here is WGS 84/Pseudo-Mercator
 st_crs(ca_map_sf) ## <- the CRS system here is WGS 84/Pseudo-Mercator 
@@ -107,9 +108,7 @@ st_crs(ca_oilspill_sf) == st_crs(ca_map_sf)
 
 ### Interactive map: Oil spill events in California (2008)
 
-```{r echo=TRUE}
-#| eval: false 
-#| echo: true
+```{r}
 
 tmap_mode(mode = "view") 
 
