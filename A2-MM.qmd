@@ -18,42 +18,76 @@ library(here)
 library(broom)
 library(sf)
 library(tmap)
-library(usmap)
-library(mapdata)
+library(spatstat)
 ```
 
-## Visualizing the oil spill events in California (2008)
+## Loading the datasets 
 
 ```{r}
-us_states <- map_data("state")
-ca_state <- subset(state, region=="california")
-counties <- map_data("county")
-ca_county <- subset(counties, region=="california")
 
-ca_map <- ggplot(data=ca_state, mapping=aes(x=long, y=lat, group=group)) + 
-  coord_fixed(1.3) + 
-  geom_polygon(color="black", fill="white") + 
-  geom_polygon(data=ca_county, fill=NA, color="black")  + 
-  ggtitle('Washington Map with Counties') + 
-  theme_void()
-ca_map
+## Setting up the oil spill 2008 events in CA dataset
 
+ca_oilspill_df <- read_csv(here('data', 'oil_spill_ca.csv')) %>% 
+  janitor::clean_names()
+
+## Converting Oil Spill coordinates into simple features for ease of use and analysis
+
+ca_oilspill_sf <- ca_oilspill_df %>% 
+  drop_na(x, y) %>% 
+  st_as_sf(coords = c("x", "y"), crs = 3857) 
+  
+## Setting up the CA Map with counties boundaries 
+
+ca_map_sf <- read_sf(here('data', 'ca_counties', 'CA_Counties_TIGER2016.shp')) %>% 
+  janitor::clean_names() %>% 
+  select(name)
 
 ```
 
+
+## Checking and aligning: Coordinate Reference Systems (CRS)
 
 ```{r}
-ca_counties_raw <- read_sf(here('data', 'oil_spill_ca.shp'))
 
-mapp2 <- ggplot(data=ca_counties_raw, mapping=aes(x=LONGITUDE, y=LATITUDE, group = geometry)) + 
-  coord_fixed(1.3) + 
-  geom_polygon(color="black", fill="white")
+st_crs(ca_oilspill_sf) ## <- the CRS system set here is WGS 84/Pseudo-Mercator
+st_crs(ca_map_sf) ## <- the CRS system here is WGS 84/Pseudo-Mercator 
 
-mapp2
+st_crs(ca_oilspill_sf) == st_crs(ca_map_sf)
+## Hence, no need to transform the features of both the data since they align. 
+
 
 ```
 
-Make an exploratory interactive map in tmap showing the location of oil spill events included in the data.
+## Interactive map: Oil spill events in California (2008)
+
+```{r}
+#| eval: false 
+#| echo: true
+
+tmap_mode(mode = "view") 
+
+colors <-  c("Inland" = "brown", "Marine" = "darkblue")
+
+
+
+ tm_shape(ca_map_sf) +
+  tm_borders() +
+  tm_shape(ca_oilspill_sf) +
+  tm_dots(col = "inlandmari", shape = 16, palette = colors, title = "Oil Spills Locations") +
+   tm_layout(title = "California Oil Spill Incidents 2008")
+
+`````
+
+## Chloreopath map
+
+```{r}
+oilspill_counties_sf <- st_join(ca_map_sf, ca_oilspill_sf)
+
+oilspill_counts_sf <- oilspill_counts_sf %>% 
+  
+
+```
+
 NOTE: an interactive map using tmap_mode(‘view’) might be very processor intensive and/or create very large files… so if your computer is older and not up to the task, it is OK to create a static map using tmap_mode(‘plot’).
 Make a finalized static choropleth map in ggplot in which the fill color for each county depends on the count of inland oil spill events by county for the 2008 oil spill data
 
