@@ -71,7 +71,7 @@ colors <-  c("Inland" = "brown", "Marine" = "darkblue")
 
 
  tm_shape(ca_map_sf) +
-  tm_borders() +
+  tm_borders() + tm_style('classic') +
   tm_shape(ca_oilspill_sf) +
   tm_dots(col = "inlandmari", shape = 16, palette = colors, title = "Oil Spills Locations") +
    tm_layout(title = "California Oil Spill Incidents 2008")
@@ -83,7 +83,18 @@ colors <-  c("Inland" = "brown", "Marine" = "darkblue")
 ```{r}
 oilspill_counties_sf <- st_join(ca_map_sf, ca_oilspill_sf)
 
-oilspill_counts_sf <- oilspill_counts_sf %>% 
+oilspill_counts_sf <- oilspill_counties_sf %>%
+  group_by(name) %>% 
+  summarize(oilspill_count = n())
+
+ggplot() +
+  geom_sf(data = oilspill_counts_sf, aes(fill = oilspill_count)) +
+  scale_fill_gradientn(colors = c("white", "yellow","orange2", "tomato", "red4"), name = "Number of Oil Spills") +
+  theme_void() +
+  labs(title = "California Oil Spill 2008", caption = "fafsfs") + 
+    theme(legend.position = "right",  # Move legend to bottom
+        plot.title = element_text(size = 15, hjust = 0.5))
+  
   
 
 ```
